@@ -25,7 +25,12 @@ app.add_middleware(
 )
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
-OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+
+OVERPASS_URLS = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+]
+
 
 USER_AGENT = "VikrayaSIHPrototype/1.0 (local development)"
 
@@ -207,24 +212,36 @@ async def fetch_nearby_businesses(
         business_type,
     )
 
-    try:
-        async with httpx.AsyncClient(timeout=45) as client:
-            response = await client.post(
-                OVERPASS_URL,
-                data={"data": query},
-                headers={"User-Agent": USER_AGENT},
-            )
-            response.raise_for_status()
-            payload = response.json()
+    
+    payload = None
 
-    except (httpx.HTTPError, ValueError) as exc:
+    for endpoint in OVERPASS_URLS:
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                response = await client.post(
+                    endpoint,
+                    data={"data": query},
+                    headers={"User-Agent": USER_AGENT},
+                )
+                response.raise_for_status()
+                payload = response.json()
+                break
+
+        except (httpx.HTTPError, ValueError) as exc:
+            print(
+                f"Overpass endpoint failed "
+                f"({endpoint}): {type(exc).__name__}: {exc}"
+            )
+            continue
+
+    if payload is None:
         raise HTTPException(
             status_code=502,
             detail=(
-                "OpenStreetMap data is temporarily unavailable. "
-                "Please try again later."
+                "All OpenStreetMap business-search servers are "
+                "temporarily unavailable. Please retry shortly."
             ),
-        ) from exc
+        )
 
     businesses = []
     seen = set()
