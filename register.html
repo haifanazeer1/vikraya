@@ -1,80 +1,136 @@
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register | Vikaas</title>
+    <title>Register | Vikraya</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
     <main class="auth-container">
         <h1>Join Vikaas</h1>
         <p>Create your business advisor account.</p>
 
         <form id="registerForm">
+            <h3>Personal Details</h3>
+
             <label for="fullName">Full name</label>
             <input id="fullName" name="fullName" required>
 
-            <label for="businessName">Business name</label>
-            <input id="businessName" name="businessName">
+            <label for="village">Village / Block</label>
+            <input id="village" name="village" required>
+
+            <label for="district">District</label>
+            <input id="district" name="district" required>
+
+            <label for="state">State</label>
+            <input id="state" name="state" required>
 
             <label for="phone">Phone number</label>
-            <input id="phone" name="phone" type="tel">
+            <input id="phone" name="phone" type="tel" required>
+
+            <h3>Business Details</h3>
+
+            <label for="businessName">Business name (if available)</label>
+            <input id="businessName" name="businessName">
+
+            <label for="businessIdea">Business idea</label>
+            <textarea id="businessIdea" name="businessIdea"
+                placeholder="Describe your proposed business"
+                required></textarea>
+
+            <label for="preferredSector">Preferred sector</label>
+            <select id="preferredSector" name="preferredSector" required>
+                <option value="">Select a sector</option>
+                <option value="tailoring">Tailoring &amp; garments</option>
+                <option value="grocery">Grocery / retail</option>
+                <option value="pharmacy">Pharmacy</option>
+                <option value="restaurant">Food / restaurant</option>
+                <option value="salon">Salon / beauty</option>
+                <option value="mobile_repair">Mobile repair</option>
+                <option value="all_shops">Other retail business</option>
+            </select>
+
+            <label for="availableMargin">Available margin (₹)</label>
+            <input id="availableMargin" name="availableMargin"
+                type="number" min="0" step="0.01" required>
+
+            <label for="schemeInterest">Scheme interest</label>
+            <select id="schemeInterest" name="schemeInterest" required>
+                <option value="">Select a scheme</option>
+                <option value="government_margin_money">
+                    Government margin-money scheme
+                </option>
+                <option value="subsidized_loan">Subsidized business loan</option>
+                <option value="working_capital">Working capital assistance</option>
+                <option value="not_sure">Help me choose a scheme</option>
+            </select>
+
+            <h3>Account Details</h3>
 
             <label for="email">Email</label>
             <input id="email" name="email" type="email" required>
 
             <label for="password">Password</label>
-            <input id="password" name="password" type="password" minlength="8" required>
+            <input id="password" name="password"
+                type="password" minlength="8" required>
 
             <button type="submit">Create account</button>
             <p id="message" role="status"></p>
         </form>
 
-        <p>Already registered?
-            <a href="login.html">Login</a>
-        </p>
+        <p>Already registered? <a href="login.html">Login</a></p>
     </main>
 
     <script type="module">
         import { registerUser } from "./auth.js";
 
-        document.getElementById("registerForm")
-            .addEventListener("submit", async (event) => {
-                event.preventDefault();
+        const form = document.getElementById("registerForm");
+        const message = document.getElementById("message");
+        const button = form.querySelector('button[type="submit"]');
 
-                const form = event.currentTarget;
-                const message = document.getElementById("message");
-                const button = form.querySelector('button[type="submit"]');
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
 
-                button.disabled = true;
-                message.textContent = "Creating your account...";
+            button.disabled = true;
+            message.textContent = "Creating your account...";
 
-                try {
-                    const result = await registerUser({
-                        fullName: form.fullName.value.trim(),
-                        businessName: form.businessName.value.trim(),
-                        phone: form.phone.value.trim(),
-                        email: form.email.value.trim(),
-                        password: form.password.value
-                    });
+            const value = (name) =>
+                form.elements[name].value.trim();
 
-                    message.textContent = result.needsEmailConfirmation
-                        ? "Account created. Check your email to confirm your account."
-                        : "Registration successful! Redirecting...";
+            try {
+                const result = await registerUser({
+                    fullName: value("fullName"),
+                    village: value("village"),
+                    district: value("district"),
+                    state: value("state"),
+                    phone: value("phone"),
+                    businessName: value("businessName"),
+                    businessIdea: value("businessIdea"),
+                    preferredSector: value("preferredSector"),
+                    availableMargin: value("availableMargin"),
+                    schemeInterest: value("schemeInterest"),
+                    email: value("email"),
+                    password: form.elements.password.value
+                });
 
-                    if (!result.needsEmailConfirmation) {
-                        window.location.href = "index.html";
-                    }
-                } catch (error) {
-                    message.textContent = error.message;
-                } finally {
-                    button.disabled = false;
+                if (result.needsEmailConfirmation) {
+                    message.textContent =
+                        "Account created. Confirm your email, then log in.";
+                } else {
+                    message.textContent =
+                        "Registration successful! Redirecting...";
+                    window.location.href = "index.html";
                 }
-            });
+            } catch (error) {
+                console.error("Registration failed:", error);
+                message.textContent = error.message ||
+                    "Registration failed. Please try again.";
+            } finally {
+                button.disabled = false;
+            }
+        });
     </script>
 </body>
-
 </html>

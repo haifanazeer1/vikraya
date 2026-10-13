@@ -4,14 +4,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vikaas — AI Business Advisor</title>
+  <title>Vikraya — AI Business Advisor</title>
   <link rel="stylesheet" href="style.css" />
+  <link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
 </head>
 
 <body>
   <header class="topbar">
     <div class="brand">
-      <strong>Vikaas</strong>
+      <strong>Vikraya</strong>
       <span>AI business advisor for rural micro-entrepreneurs</span>
     </div>
 
@@ -68,13 +72,14 @@
   </aside>
 
   <main class="main" id="main"></main>
-
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Dashboard authentication and logout -->
   <script type="module">
     import {
-      getCurrentUser,
-      logoutUser
-    } from "./auth.js";
+  getCurrentUser,
+  getUserProfile,
+  logoutUser
+} from "./auth.js";
 
     const accountActions =
       document.getElementById("account-actions");
@@ -136,11 +141,14 @@
     const authenticated = await initializeDashboard();
 
     if (authenticated) {
-      // Load your existing dashboard navigation and sections.
-      const script = document.createElement("script");
-      script.src = "./script.js";
-      document.body.appendChild(script);
-    }
+  // Make the authenticated user's profile available to script.js.
+  window.getVikaasProfile = getUserProfile;
+
+  // Load the existing dashboard.
+  const script = document.createElement("script");
+  script.src = "./script.js";
+  document.body.appendChild(script);
+}
   </script>
 
 </body>

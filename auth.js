@@ -26,23 +26,45 @@ export const supabase = createClient(
 // 2. REGISTER A NEW USER
 // ========================================
 
+
 export async function registerUser({
     fullName,
+    village,
+    district,
+    state,
     businessName,
+    businessIdea,
+    preferredSector,
+    availableMargin,
+    schemeInterest,
     phone,
     email,
     password
 }) {
+    const margin = Number(availableMargin);
+
+    if (!Number.isFinite(margin) || margin < 0) {
+        throw new Error("Enter a valid available margin.");
+    }
+
     const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
             data: {
                 full_name: fullName.trim(),
-                business_name: businessName?.trim() || "",
-                phone: phone?.trim() || ""
+                business_name: businessName.trim(),
+                phone: phone.trim(),
+                village: village.trim(),
+                district: district.trim(),
+                state: state.trim(),
+                business_idea: businessIdea.trim(),
+                preferred_sector: preferredSector,
+                available_margin: String(margin),
+                scheme_interest: schemeInterest
             },
-            emailRedirectTo: window.location.origin + "/login.html"
+            emailRedirectTo:
+                window.location.origin + "/login.html"
         }
     });
 
@@ -54,6 +76,7 @@ export async function registerUser({
         needsEmailConfirmation: !data.session
     };
 }
+
 
 // ========================================
 // 3. LOG IN
@@ -124,6 +147,7 @@ export function onAuthStateChange(callback) {
 // 8. GET THE LOGGED-IN USER'S PROFILE
 // ========================================
 
+
 export async function getUserProfile() {
     const user = await getCurrentUser();
 
@@ -133,7 +157,20 @@ export async function getUserProfile() {
 
     const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, business_name, phone, created_at")
+        .select(`
+            id,
+            full_name,
+            business_name,
+            phone,
+            village,
+            district,
+            state,
+            business_idea,
+            preferred_sector,
+            available_margin,
+            scheme_interest,
+            created_at
+        `)
         .eq("id", user.id)
         .maybeSingle();
 
@@ -141,3 +178,4 @@ export async function getUserProfile() {
 
     return data;
 }
+
