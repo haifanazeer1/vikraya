@@ -1,37 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vikaas — AI Business Advisor</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <header class="topbar">
-    <div class="brand"><strong>Vikaas</strong><span>AI business advisor for rural micro-entrepreneurs</span></div>
+    <div class="brand">
+      <strong>Vikaas</strong>
+      <span>AI business advisor for rural micro-entrepreneurs</span>
+    </div>
+
     <div class="top-actions">
+
       <div class="languages" aria-label="Choose language">
         <button class="lang active" data-lang="en">EN</button>
         <button class="lang" data-lang="hi">हि</button>
         <button class="lang" data-lang="te">తె</button>
       </div>
+
       <span class="project-tag">PS 26091 · CacheMode</span>
+
+      <div id="account-actions" class="account-actions" hidden>
+        <span id="user-email"></span>
+        <button id="logout-btn" class="btn logout-btn" type="button">
+          Logout
+        </button>
+      </div>
+
     </div>
   </header>
 
   <aside class="sidebar">
     <nav id="steps">
-      <button class="nav-item" data-page="onboarding"><span>1</span>Onboarding</button>
-      <button class="nav-item" data-page="market"><span>2</span>Market Intelligence</button>
-      <button class="nav-item" data-page="feasibility"><span>3</span>Feasibility Report</button>
-      <button class="nav-item" data-page="finance"><span>4</span>Financial Calculator</button>
-      <button class="nav-item" data-page="emi"><span>5</span>EMI &amp; Moratorium</button>
-      <button class="nav-item" data-page="advisor"><span>6</span>AI Advisor</button>
-      <button class="nav-item" data-page="business"><span>7</span>Business Case</button>
+      <button class="nav-item" data-page="onboarding">
+        <span>1</span>Onboarding
+      </button>
+
+      <button class="nav-item" data-page="market">
+        <span>2</span>Market Intelligence
+      </button>
+
+      <button class="nav-item" data-page="feasibility">
+        <span>3</span>Feasibility Report
+      </button>
+
+      <button class="nav-item" data-page="finance">
+        <span>4</span>Financial Calculator
+      </button>
+
+      <button class="nav-item" data-page="emi">
+        <span>5</span>EMI &amp; Moratorium
+      </button>
+
+      <button class="nav-item" data-page="advisor">
+        <span>6</span>AI Advisor
+      </button>
+
+      <button class="nav-item" data-page="business">
+        <span>7</span>Business Case
+      </button>
     </nav>
   </aside>
 
   <main class="main" id="main"></main>
-  <script src="script.js"></script>
+
+  <!-- Dashboard authentication and logout -->
+  <script type="module">
+    import {
+      getCurrentUser,
+      logoutUser
+    } from "./auth.js";
+
+    const accountActions =
+      document.getElementById("account-actions");
+
+    const userEmail =
+      document.getElementById("user-email");
+
+    const logoutButton =
+      document.getElementById("logout-btn");
+
+    const main =
+      document.getElementById("main");
+
+    // Keep dashboard hidden until authentication is verified.
+    main.style.visibility = "hidden";
+
+    async function initializeDashboard() {
+      try {
+        const user = await getCurrentUser();
+
+        if (!user) {
+          window.location.replace("login.html");
+          return false;
+        }
+
+        userEmail.textContent = user.email || "My account";
+        accountActions.hidden = false;
+
+        main.style.visibility = "visible";
+        return true;
+
+      } catch (error) {
+        console.error("Authentication check failed:", error);
+        window.location.replace("login.html");
+        return false;
+      }
+    }
+
+    // Sign out from Supabase and return to login.
+    logoutButton.addEventListener("click", async () => {
+      logoutButton.disabled = true;
+      logoutButton.textContent = "Logging out...";
+
+      try {
+        await logoutUser();
+        window.location.replace("login.html");
+
+      } catch (error) {
+        console.error("Logout failed:", error);
+
+        alert("Unable to log out: " + error.message);
+
+        logoutButton.disabled = false;
+        logoutButton.textContent = "Logout";
+      }
+    });
+
+    // Initialize authentication before displaying dashboard content.
+    const authenticated = await initializeDashboard();
+
+    if (authenticated) {
+      // Load your existing dashboard navigation and sections.
+      const script = document.createElement("script");
+      script.src = "./script.js";
+      document.body.appendChild(script);
+    }
+  </script>
+
 </body>
+
 </html>

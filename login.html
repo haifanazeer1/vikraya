@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Vikaas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <main class="auth-container">
+        <h1>Welcome back</h1>
+        <p>Log in to your Vikaas account.</p>
+
+        <form id="loginForm">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" required>
+
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" required>
+
+            <button type="submit">Login</button>
+            <p id="message" role="status"></p>
+        </form>
+
+        <p>New to Vikaas?
+            <a href="register.html">Create an account</a>
+        </p>
+    </main>
+
+    <script type="module">
+        import { loginUser } from "./auth.js";
+
+        document.getElementById("loginForm")
+            .addEventListener("submit", async (event) => {
+                event.preventDefault();
+
+                const form = event.currentTarget;
+                const message = document.getElementById("message");
+                const button = form.querySelector('button[type="submit"]');
+
+                button.disabled = true;
+                message.textContent = "Logging in...";
+
+                try {
+                    await loginUser(
+                        form.email.value.trim(),
+                        form.password.value
+                    );
+
+                    window.location.href = "index.html";
+                } catch (error) {
+                    message.textContent = error.message;
+                } finally {
+                    button.disabled = false;
+                }
+            });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | Vikaas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <main class="auth-container">
+        <h1>Join Vikaas</h1>
+        <p>Create your business advisor account.</p>
+
+        <form id="registerForm">
+            <label for="fullName">Full name</label>
+            <input id="fullName" name="fullName" required>
+
+            <label for="businessName">Business name</label>
+            <input id="businessName" name="businessName">
+
+            <label for="phone">Phone number</label>
+            <input id="phone" name="phone" type="tel">
+
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" required>
+
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" minlength="8" required>
+
+            <button type="submit">Create account</button>
+            <p id="message" role="status"></p>
+        </form>
+
+        <p>Already registered?
+            <a href="login.html">Login</a>
+        </p>
+    </main>
+
+    <script type="module">
+        import { registerUser } from "./auth.js";
+
+        document.getElementById("registerForm")
+            .addEventListener("submit", async (event) => {
+                event.preventDefault();
+
+                const form = event.currentTarget;
+                const message = document.getElementById("message");
+                const button = form.querySelector('button[type="submit"]');
+
+                button.disabled = true;
+                message.textContent = "Creating your account...";
+
+                try {
+                    const result = await registerUser({
+                        fullName: form.fullName.value.trim(),
+                        businessName: form.businessName.value.trim(),
+                        phone: form.phone.value.trim(),
+                        email: form.email.value.trim(),
+                        password: form.password.value
+                    });
+
+                    message.textContent = result.needsEmailConfirmation
+                        ? "Account created. Check your email to confirm your account."
+                        : "Registration successful! Redirecting...";
+
+                    if (!result.needsEmailConfirmation) {
+                        window.location.href = "index.html";
+                    }
+                } catch (error) {
+                    message.textContent = error.message;
+                } finally {
+                    button.disabled = false;
+                }
+            });
+    </script>
+</body>
+
+</html>
