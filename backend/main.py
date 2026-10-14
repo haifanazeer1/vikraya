@@ -112,7 +112,7 @@ def generate_feasibility_with_gemini(profile: dict, market: dict):
     client = genai.Client(
     api_key=api_key,
     http_options={
-        "timeout": 120000
+        "timeout": 300000
     }
     )
 
@@ -143,6 +143,9 @@ def generate_feasibility_with_gemini(profile: dict, market: dict):
         ],
         "summary": market.get("summary"),
         "source": market.get("source"),
+        "official_msme_statistics": market.get(
+        "official_msme_statistics"
+),
     }
 
     prompt = f"""
@@ -184,7 +187,14 @@ Rules:
 5. Do not guarantee business success, loan approval, or scheme eligibility.
 6. Keep the report practical, clear, and useful for a first-time
    entrepreneur in India.
-7. Return valid JSON only, with no Markdown fences.
+7. If official_msme_statistics is available, include the figures
+   in the report and identify them as official state-level MSME
+   registration statistics. Include the reporting date and source.
+   These figures describe registered enterprises, not customer
+   demand or the number of direct competitors.
+8. If MSME statistics are missing, state that they are unavailable.
+   Never invent or infer registration figures.
+9. Return valid JSON only, with no Markdown fences.
 """
     
     interaction = client.interactions.create(
@@ -456,6 +466,57 @@ def health_check():
     return {"status": "ok"}
 
 
+@app.get("/api/msme-statistics")
+def get_msme_statistics(state: str):
+    """Retrieve official state-wise MSME statistics from Supabase."""
+
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+    if not supabase_url or not supabase_key:
+        raise HTTPException(
+            status_code=500,
+            detail="Supabase configuration is missing."
+        )
+
+    try:
+        from supabase import create_client
+
+        supabase = create_client(supabase_url, supabase_key)
+
+        result = (
+            supabase.table("msme_state_stats")
+            .select(
+                "state, micro_enterprises, small_enterprises, "
+                "medium_enterprises, total_enterprises, "
+                "reporting_date, source"
+            )
+            .ilike("state", state.strip())
+            .limit(1)
+            .execute()
+        )
+
+        if not result.data:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No MSME statistics found for {state}."
+            )
+
+        return {
+            "status": "success",
+            "data": result.data[0]
+        }
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"MSME statistics lookup failed: {exc}")
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to retrieve MSME statistics."
+        )
+
+
 @app.post("/api/market-intelligence")
 async def market_intelligence(request: MarketRequest):
     center = await geocode_location(request.location)
@@ -503,6 +564,35 @@ async def market_intelligence(request: MarketRequest):
 
     return report
 
+def get_msme_statistics_for_state(state: str):
+    """Fetch state-level MSME statistics from Supabase."""
+
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+    if not supabase_url or not supabase_key or not state:
+        return None
+
+    try:
+        from supabase import create_client
+
+        supabase = create_client(supabase_url, supabase_key)
+
+        result = (
+            supabase.table("msme_state_stats")
+            .select("*")
+            .ilike("state", state.strip())
+            .limit(1)
+            .execute()
+        )
+
+        return result.data[0] if result.data else None
+
+    except Exception as exc:
+        print(f"MSME lookup error: {exc}")
+        return None
+
+
 @app.post("/api/feasibility-report")
 async def create_feasibility_report(request: FeasibilityRequest):
     if not request.profile or not request.market_report:
@@ -518,10 +608,19 @@ async def create_feasibility_report(request: FeasibilityRequest):
         )
 
     try:
+        state = request.profile.get("state", "")
+
+        msme_data = await asyncio.to_thread(
+            get_msme_statistics_for_state,
+            state
+        )
+
+        market_report = dict(request.market_report)
+        market_report["official_msme_statistics"] = msme_data
         report = await asyncio.to_thread(
             generate_feasibility_with_gemini,
             request.profile,
-            request.market_report,
+            market_report,
         )
         return {
             "status": "success",
