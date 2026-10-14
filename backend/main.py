@@ -4,13 +4,16 @@ import os
 import re
 import time
 from typing import Literal
-
+import asyncio
+import json
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+
+from google import genai
 load_dotenv()
 
 app = FastAPI(title="Vikraya Market Intelligence API")
@@ -94,6 +97,114 @@ class MarketRequest(BaseModel):
 geocode_cache = {}
 last_geocode_request = 0.0
 
+
+class FeasibilityRequest(BaseModel):
+    profile: dict
+    market_report: dict
+
+
+def generate_feasibility_with_gemini(profile: dict, market: dict):
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY is missing from backend/.env")
+
+    model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    client = genai.Client(
+    api_key=api_key,
+    http_options={
+        "timeout": 120000
+    }
+    )
+
+    # Pass only relevant profile fields and market facts.
+    safe_profile = {
+        "business_name": profile.get("business_name"),
+        "business_idea": profile.get("business_idea"),
+        "preferred_sector": profile.get("preferred_sector"),
+        "village": profile.get("village"),
+        "district": profile.get("district"),
+        "state": profile.get("state"),
+        "available_margin": profile.get("available_margin"),
+    }
+
+    safe_market = {
+        "location": market.get("location"),
+        "business_type": market.get("business_type"),
+        "radius_km": market.get("radius_km"),
+        "competitor_count": market.get("competitor_count"),
+        "businesses": [
+            {
+                "name": item.get("name"),
+                "category": item.get("category"),
+                "distance_km": item.get("distance_km"),
+            }
+            for item in market.get("businesses", [])[:50]
+            if isinstance(item, dict)
+        ],
+        "summary": market.get("summary"),
+        "source": market.get("source"),
+    }
+
+    prompt = f"""
+You are a careful small-business feasibility analyst for Indian
+micro-enterprises. Analyse the supplied profile and local market data.
+
+PROFILE:
+{json.dumps(safe_profile, ensure_ascii=False)}
+
+MARKET DATA:
+{json.dumps(safe_market, ensure_ascii=False)}
+
+Return one JSON object with exactly these keys:
+- executive_summary: string
+- feasibility_status: string, one of "Promising", "Needs validation",
+  or "High risk"
+- status_reason: string
+- strengths: array of strings
+- weaknesses: array of strings
+- opportunities: array of strings
+- threats: array of strings
+- competitor_analysis: string
+- customer_validation_steps: array of strings
+- operational_requirements: array of strings
+- financial_assumptions: array of strings
+- key_risks: array of strings
+- next_steps: array of strings
+- data_limitations: array of strings
+
+Rules:
+1. Use the supplied facts; do not invent population, customer demand,
+   prices, revenue, profit, market size, or competitor names.
+2. OpenStreetMap features are mapped businesses, not a guaranteed
+   complete list of actual competitors.
+3. Clearly label any inference as an inference and any missing data
+   as unknown. If demand or financial data is missing, recommend how
+   to collect it rather than making up numbers.
+4. Consider the business idea, sector, location and available margin.
+5. Do not guarantee business success, loan approval, or scheme eligibility.
+6. Keep the report practical, clear, and useful for a first-time
+   entrepreneur in India.
+7. Return valid JSON only, with no Markdown fences.
+"""
+    
+    interaction = client.interactions.create(
+        model=model_name,
+        input=prompt,
+        generation_config={
+            "temperature": 0.2,
+        },
+    )
+
+    response_text = interaction.output_text
+
+    if not response_text:
+        raise ValueError("Gemini returned an empty response.")
+
+    return json.loads(response_text)
+
+    
+
+    
 
 def haversine_km(lat1, lon1, lat2, lon2):
     """Calculate straight-line distance between two coordinates."""
@@ -391,3 +502,46 @@ async def market_intelligence(request: MarketRequest):
     report["report_id"] = report_id
 
     return report
+
+@app.post("/api/feasibility-report")
+async def create_feasibility_report(request: FeasibilityRequest):
+    if not request.profile or not request.market_report:
+        raise HTTPException(
+            status_code=400,
+            detail="Profile and market report are required.",
+        )
+
+    if not request.market_report.get("location"):
+        raise HTTPException(
+            status_code=400,
+            detail="The market report must include a location.",
+        )
+
+    try:
+        report = await asyncio.to_thread(
+            generate_feasibility_with_gemini,
+            request.profile,
+            request.market_report,
+        )
+        return {
+            "status": "success",
+            "model": os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+            "report": report,
+        }
+
+    except json.JSONDecodeError as exc:
+        print(f"Gemini JSON parsing failed: {exc}")
+        raise HTTPException(
+            status_code=502,
+            detail="The AI returned an invalid report. Please retry.",
+        ) from exc
+
+    except Exception as exc:
+        print(f"Feasibility generation failed: {type(exc).__name__}: {exc}")
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "The feasibility report could not be generated. "
+                "Check the backend terminal and Gemini API configuration."
+            ),
+        ) from exc

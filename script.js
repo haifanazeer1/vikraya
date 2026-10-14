@@ -180,72 +180,36 @@ market: {
 },
 
 
-  feasibility: {
-    title: "AI-powered feasibility report",
-    sub: "Localized SWOT scaled to a ₹1,80,000 micro-enterprise budget.",
-
-    render: () => `
-      <div class="content">
-        <div class="swot">
-          <div>
-            <h3>Strengths</h3>
-            <ul>
-              <li>Low competitor density in the 5 km catchment</li>
-              <li>Existing tailoring skill, no new training cost</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3>Weaknesses</h3>
-            <ul>
-              <li>Single-buyer dependency on the weekly haat</li>
-              <li>No cold storage for fabric during monsoon</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3>Opportunities</h3>
-            <ul>
-              <li>Underserved niche in ready-stitched blouses</li>
-              <li>Nearby college hostel as a steady buyer base</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3>Threats</h3>
-            <ul>
-              <li>Seasonal demand swings around festivals</li>
-              <li>Fabric supply-chain bottleneck in peak season</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="grid2" style="margin-top: 16px">
-          <div class="stat">
-            <strong>₹450–520</strong>
-            <small>
-              optimal price band per garment, based on regional purchasing power
-            </small>
-          </div>
-
-          <div class="stat">
-            <strong>₹6.1L</strong>
-            <small>
-              estimated annual local market value for this niche
-            </small>
-          </div>
-        </div>
-
-        <button
-          class="btn"
-          style="margin-top: 18px"
-          data-goto="finance"
-        >
-          Open financial calculator →
+  
+feasibility: {
+  title: "AI-powered business feasibility report",
+  sub: "Generated from your entrepreneur profile and latest local market intelligence.",
+  render: () => `
+    <div class="content">
+      <div class="panel">
+        <h2>Generate your feasibility report</h2>
+        <p>
+          Gemini will analyse your business idea, available margin,
+          mapped competitors and local market data.
+        </p>
+        <p class="muted">
+          Run Market Intelligence first so this report uses your latest search.
+        </p>
+        <button class="btn" id="generate-feasibility-btn">
+          Generate AI feasibility report
         </button>
+        <p id="feasibility-status" role="status" aria-live="polite"></p>
       </div>
-    `
-  },
+
+      <div id="feasibility-results" class="content"></div>
+
+      <button class="btn" style="margin-top: 18px" data-goto="finance">
+        Continue to financial planning →
+      </button>
+    </div>
+  `
+},
+
 
   finance: {
     title: "Smart financial calculator & scheme auto-router",
@@ -317,96 +281,69 @@ market: {
     `
   },
 
-  emi: {
-    title: "EMI & moratorium planner",
-    sub: "Quarterly schedule for the ₹1,62,000 Term Loan, 6-month moratorium applied automatically.",
+  
+emi: {
+  title: "EMI & moratorium planner",
+  sub: "Calculate quarterly repayments and estimate working capital during the moratorium.",
+  render: () => `
+    <div class="content">
 
-    render: () => `
-      <div class="content">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Quarter</th>
-              <th>Principal due</th>
-              <th>Interest due</th>
-              <th>Payment</th>
-              <th>Status</th>
-            </tr>
-          </thead>
+      <div class="panel">
+        <h2>Loan details</h2>
 
-          <tbody>
-            <tr>
-              <td><i>Q1</i></td>
-              <td>₹0</td>
-              <td>₹0</td>
-              <td>₹0</td>
-              <td>
-                <span class="pill">Moratorium</span>
-              </td>
-            </tr>
-
-            <tr>
-              <td><i>Q2</i></td>
-              <td>₹0</td>
-              <td>₹0</td>
-              <td>₹0</td>
-              <td>
-                <span class="pill">Moratorium</span>
-              </td>
-            </tr>
-
-            <tr>
-              <td>Q3</td>
-              <td>₹5,400</td>
-              <td>₹3,240</td>
-              <td>₹8,640</td>
-              <td>Due</td>
-            </tr>
-
-            <tr>
-              <td>Q4</td>
-              <td>₹5,400</td>
-              <td>₹3,132</td>
-              <td>₹8,532</td>
-              <td>Due</td>
-            </tr>
-
-            <tr>
-              <td>Q5</td>
-              <td>₹5,400</td>
-              <td>₹3,024</td>
-              <td>₹8,424</td>
-              <td>Due</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="grid2" style="margin-top: 16px">
-          <div class="stat">
-            <strong>₹8,640</strong>
-            <small>
-              quarterly EMI once repayment begins (Q3)
-            </small>
+        <div class="grid2">
+          <div>
+            <label for="emi-loan">Loan amount (₹)</label>
+            <input id="emi-loan" type="number" min="1"
+              value="162000" />
           </div>
 
-          <div class="stat">
-            <strong>₹24,000</strong>
-            <small>
-              working capital needed to cover the moratorium period
-            </small>
+          <div>
+            <label for="emi-rate">Annual interest rate (%)</label>
+            <input id="emi-rate" type="number" min="0"
+              max="100" step="0.1" value="8" />
+          </div>
+
+          <div>
+            <label for="emi-tenure">Repayment tenure (years)</label>
+            <input id="emi-tenure" type="number" min="1"
+              max="30" value="7" />
+          </div>
+
+          <div>
+            <label for="emi-moratorium">Moratorium (months)</label>
+            <input id="emi-moratorium" type="number" min="0"
+              max="60" value="6" />
+          </div>
+
+          <div>
+            <label for="emi-expenses">Monthly business expenses (₹)</label>
+            <input id="emi-expenses" type="number" min="0"
+              value="4000" />
           </div>
         </div>
 
-        <button
-          class="btn"
-          style="margin-top: 18px"
-          data-goto="advisor"
-        >
-          Ask the AI advisor →
+        <p class="muted">
+          Illustrative estimate. Actual repayment depends on the
+          lender's terms and treatment of interest during moratorium.
+        </p>
+
+        <button class="btn" id="calculate-emi">
+          Calculate repayment plan
         </button>
+        <p id="emi-error" role="status"></p>
       </div>
-    `
-  },
+
+      <div id="emi-results" class="content"></div>
+
+      <button class="btn" style="margin-top:18px"
+        data-goto="advisor">
+        Ask the AI advisor →
+      </button>
+    </div>
+  `
+},
+
 
   advisor: {
     title: "Multilingual AI business advisor",
@@ -740,6 +677,7 @@ async function runMarketSearch(event) {
         );
 
         const report = await response.json();
+        window.lastMarketReport = report;
 
         if (!response.ok) {
             throw new Error(
@@ -813,6 +751,288 @@ function renderPage(key) {
     <p class="subtitle">${page.sub}</p>
     ${page.render()}
   `;
+  
+const calculateEmiButton = document.getElementById("calculate-emi");
+
+if (calculateEmiButton) {
+  calculateEmiButton.addEventListener("click", () => {
+    console.log("EMI button found:", calculateEmiButton);
+    const loan = Number(document.getElementById("emi-loan").value);
+    const annualRate = Number(document.getElementById("emi-rate").value);
+    const tenureYears = Number(document.getElementById("emi-tenure").value);
+    const moratoriumMonths = Number(
+      document.getElementById("emi-moratorium").value
+    );
+    const monthlyExpenses = Number(
+      document.getElementById("emi-expenses").value
+    );
+
+    const error = document.getElementById("emi-error");
+    const results = document.getElementById("emi-results");
+
+    error.textContent = "";
+    results.replaceChildren();
+
+    if (
+      !Number.isFinite(loan) || loan <= 0 ||
+      !Number.isFinite(annualRate) || annualRate < 0 || annualRate > 100 ||
+      !Number.isInteger(tenureYears) || tenureYears < 1 || tenureYears > 30 ||
+      !Number.isInteger(moratoriumMonths) ||
+      moratoriumMonths < 0 || moratoriumMonths > 60 ||
+      !Number.isFinite(monthlyExpenses) || monthlyExpenses < 0
+    ) {
+      error.textContent = "Please enter valid loan details.";
+      return;
+    }
+
+    const fmt = (value) =>
+      "₹" + Math.round(value).toLocaleString("en-IN");
+
+    const monthlyRate = annualRate / 1200;
+    const totalMonths = tenureYears * 12;
+
+    // Illustrative assumption: interest is not capitalized
+    // during the moratorium; repayments start afterwards.
+    const repaymentMonths = totalMonths - moratoriumMonths;
+
+    if (repaymentMonths <= 0) {
+      error.textContent =
+        "The moratorium must be shorter than the repayment tenure.";
+      return;
+    }
+
+    let monthlyPayment;
+
+    if (monthlyRate === 0) {
+      monthlyPayment = loan / repaymentMonths;
+    } else {
+      const power = Math.pow(1 + monthlyRate, repaymentMonths);
+      monthlyPayment =
+        loan * monthlyRate * power / (power - 1);
+    }
+
+    const quarterlyPayment = monthlyPayment * 3;
+    const quarterlyPrincipal = loan / Math.ceil(repaymentMonths / 3);
+    const quarterlyRows = [];
+    let balance = loan;
+    let totalInterest = 0;
+
+    const totalQuarters = Math.ceil(totalMonths / 3);
+
+    for (let q = 1; q <= totalQuarters; q++) {
+      const startMonth = (q - 1) * 3;
+      const monthsInQuarter = Math.min(3, totalMonths - startMonth);
+      let principalDue = 0;
+      let interestDue = 0;
+
+      for (let m = 0; m < monthsInQuarter; m++) {
+        const monthNumber = startMonth + m + 1;
+
+        if (monthNumber <= moratoriumMonths) {
+          continue;
+        }
+
+        const interest = balance * monthlyRate;
+        const principal = Math.min(
+          balance,
+          Math.max(0, monthlyPayment - interest)
+        );
+
+        interestDue += interest;
+        principalDue += principal;
+        balance -= principal;
+      }
+
+      totalInterest += interestDue;
+
+      const isMoratorium = startMonth + monthsInQuarter <= moratoriumMonths;
+      const payment = principalDue + interestDue;
+
+      quarterlyRows.push(`
+        <tr>
+          <td>Q${q}</td>
+          <td>${fmt(principalDue)}</td>
+          <td>${fmt(interestDue)}</td>
+          <td>${fmt(payment)}</td>
+          <td>${isMoratorium ? "Moratorium" : "Repayment"}</td>
+        </tr>
+      `);
+    }
+
+    const workingCapital = monthlyExpenses * moratoriumMonths;
+
+    results.innerHTML = `
+      <div class="grid2">
+        <div class="stat">
+          <strong>${fmt(monthlyPayment)}</strong>
+          <small>Estimated monthly repayment after moratorium</small>
+        </div>
+        <div class="stat">
+          <strong>${fmt(quarterlyPayment)}</strong>
+          <small>Approximate quarterly payment for 3 full repayment months</small>
+        </div>
+        <div class="stat">
+          <strong>${fmt(totalInterest)}</strong>
+          <small>Estimated total interest over repayment</small>
+        </div>
+        <div class="stat">
+          <strong>${fmt(workingCapital)}</strong>
+          <small>Working capital for the moratorium period</small>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <h2>Quarterly repayment schedule</h2>
+        <div style="overflow-x:auto">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Quarter</th>
+                <th>Principal due</th>
+                <th>Interest due</th>
+                <th>Payment</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>${quarterlyRows.join("")}</tbody>
+          </table>
+        </div>
+        <p class="muted">
+          Estimates assume equal monthly instalments after the
+          moratorium and no interest capitalization during it.
+          Actual lender schedules may differ.
+        </p>
+      </div>
+    `;
+  });
+}
+
+const feasibilityButton = document.getElementById(
+  "generate-feasibility-btn"
+);
+
+if (feasibilityButton) {
+  feasibilityButton.addEventListener("click", async () => {
+    const status = document.getElementById("feasibility-status");
+    const results = document.getElementById("feasibility-results");
+
+    const profile = window.vikaasProfile;
+    const marketReport = window.lastMarketReport;
+
+    if (!profile) {
+      status.textContent =
+        "Your saved profile is not loaded. Reopen Onboarding and try again.";
+      return;
+    }
+
+    if (!marketReport) {
+      status.textContent =
+        "Please run Market Intelligence successfully before generating this report.";
+      return;
+    }
+
+    feasibilityButton.disabled = true;
+    status.textContent = "Gemini is analysing your business and market data...";
+    results.replaceChildren();
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/feasibility-report",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            profile,
+            market_report: marketReport
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail || "Unable to generate the feasibility report."
+        );
+      }
+
+      const report = data.report;
+
+      const sections = [
+        ["Strengths", report.strengths],
+        ["Weaknesses", report.weaknesses],
+        ["Opportunities", report.opportunities],
+        ["Threats", report.threats],
+        ["Customer validation steps", report.customer_validation_steps],
+        ["Operational requirements", report.operational_requirements],
+        ["Financial assumptions", report.financial_assumptions],
+        ["Key risks", report.key_risks],
+        ["Recommended next steps", report.next_steps],
+        ["Data limitations", report.data_limitations]
+      ];
+
+      const listHtml = (items) => {
+        if (!Array.isArray(items) || items.length === 0) {
+          return "<p>Not available.</p>";
+        }
+
+        return `<ul>${items.map(item =>
+          `<li>${escapeHtml(String(item))}</li>`
+        ).join("")}</ul>`;
+      };
+
+      results.innerHTML = `
+        <div class="panel">
+          <div class="section-head">
+            <h2>Feasibility assessment</h2>
+            <span class="status">${escapeHtml(
+              String(report.feasibility_status || "Needs validation")
+            )}</span>
+          </div>
+
+          <h3>Executive summary</h3>
+          <p>${escapeHtml(String(report.executive_summary || ""))}</p>
+
+          <h3>Assessment rationale</h3>
+          <p>${escapeHtml(String(report.status_reason || ""))}</p>
+
+          <h3>Competitor analysis</h3>
+          <p>${escapeHtml(String(report.competitor_analysis || ""))}</p>
+
+          ${sections.map(([title, items]) => `
+            <section>
+              <h3>${escapeHtml(title)}</h3>
+              ${listHtml(items)}
+            </section>
+          `).join("")}
+
+          <p class="muted">
+            Generated using ${escapeHtml(String(data.model || "Gemini"))}.
+            Market coverage may be incomplete; validate assumptions locally.
+          </p>
+
+          <button class="btn" id="print-feasibility-btn">
+            Print / Save report as PDF
+          </button>
+        </div>
+      `;
+
+      document.getElementById("print-feasibility-btn")
+        .addEventListener("click", () => window.print());
+
+      status.textContent = "Feasibility report generated successfully.";
+    } catch (error) {
+      console.error("Feasibility generation failed:", error);
+      status.textContent = error.message ||
+        "Something went wrong. Check the backend terminal.";
+    } finally {
+      feasibilityButton.disabled = false;
+    }
+  });
+}
+
   // Fetch real profile data whenever Onboarding is opened.
 if (key === "onboarding") {
     loadOnboardingProfile();
